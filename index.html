@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>@.minhhvu</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Poppins:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;600;700&display=swap" rel="stylesheet" />
+<style>
+  /* ============ BIẾN MÀU SẮC ============ */
+  :root {
+    --bg: #050508; 
+    --card-bg: rgba(15, 15, 20, 0.7);
+    --border: rgba(255, 255, 255, 0.06);
+    --text: #ffffff;
+    --text-muted: #8b8b99;
+    --accent: #8b5cf6; 
+    --accent-glow: rgba(139, 92, 246, 0.3);
+    
+    /* Màu trạng thái Discord */
+    --online: #23a55a;
+    --idle: #f0b232;
+    --dnd: #f23f43;
+    --offline: #80848e;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html, body {
+    min-height: 100%;
+    font-family: 'Poppins', sans-serif;
+    background-color: var(--bg);
+    background-image: radial-gradient(circle at 50% 0%, rgba(139, 92, 246, 0.1), transparent 50%),
+                      radial-gradient(circle at 100% 100%, rgba(6, 182, 212, 0.05), transparent 50%);
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    color: var(--text);
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+
+  /* =========================================================
+     1. MÀN HÌNH CHỜ (LOADING SCREEN)
+     ========================================================= */
+  #loading-screen {
+    position: fixed; inset: 0;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    background: var(--bg);
+    z-index: 9999;
+    cursor: pointer;
+    transition: opacity 0.6s ease;
+  }
+  #loading-screen.hidden { opacity: 0; pointer-events: none; }
+  
+  .typewriter {
+    font-family: 'Space Grotesk', monospace;
+    font-size: 3rem; 
+    font-weight: 700;
+    letter-spacing: 2px; 
+    height: 4.5rem;
+    color: #fff;
+    z-index: 10;
+  }
+  .typewriter::after { 
+    content: '|'; 
+    animation: blink 1s step-end infinite; 
+    color: var(--accent); 
+    font-weight: 300;
+  }
+  @keyframes blink { 50% { opacity: 0; } }
+
+  .code-icon {
+    font-family: 'Fira Code', monospace;
+    font-size: 2.2rem; color: var(--accent);
+    margin: 10px 0 30px 0; opacity: 0.7;
+    z-index: 10;
+  }
+
+  .click-text {
+    font-family: 'Fira Code', monospace;
+    font-size: 0.95rem; color: var(--text-muted);
+    white-space: pre;
+    letter-spacing: 1px;
+    animation: pulse 2s infinite;
+    z-index: 10;
+  }
+  @keyframes pulse { 0%, 100% { opacity: 0.5; } 50% { opacity: 1; } }
+
+  /* =========================================================
+     2. DYNAMIC ISLAND (Ghim cố định)
+     ========================================================= */
+  .dynamic-island-wrapper {
+    position: fixed; top: 20px; left: 50%;
+    transform: translateX(-50%);
+    z-index: 999;
+  }
+
+  .dynamic-island {
+    background: linear-gradient(145deg, #121218, #0a0a0f);
+    border-radius: 50px;
+    padding: 8px 24px 8px 8px;
+    display: flex; align-items: center; gap: 16px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.8), inset 0 0 0 1px rgba(255,255,255,0.08);
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    cursor: pointer;
+    min-width: 320px;
+  }
+  .dynamic-island:hover { transform: scale(1.02); box-shadow: 0 10px 40px var(--accent-glow); }
+  
+  .album-art {
+    width: 50px; height: 50px; border-radius: 50%;
+    object-fit: cover; box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+  }
+
+  .island-info { flex: 1; display: flex; flex-direction: column; justify-content: center; }
+  .island-label { font-size: 0.65rem; font-weight: 700; color: var(--accent); letter-spacing: 1px; margin-bottom: 2px; }
+  .island-song { font-size: 0.95rem; font-weight: 600; color: #fff; line-height: 1.2; }
+  .island-artist { font-size: 0.75rem; color: var(--text-muted); }
+
+  .eq-icon { display: flex; gap: 3px; align-items: flex-end; height: 18px; padding-right: 10px;}
+  .eq-icon span { width: 3px; background: var(--accent); border-radius: 2px; animation: eq 1s infinite alternate; }
+  .eq-icon span:nth-child(1) { height: 6px; animation-delay: 0.1s; }
+  .eq-icon span:nth-child(2) { height: 16px; animation-delay: 0.3s; }
+  .eq-icon span:nth-child(3) { height: 10px; animation-delay: 0.2s; }
+  .eq-icon span:nth-child(4) { height: 14px; animation-delay: 0.4s; }
+  @keyframes eq { from { height: 3px; } to { height: 18px; } }
+
+  /* =========================================================
+     3. GIAO DIỆN CHÍNH
+     ========================================================= */
+  #main-content {
+    min-height: 100vh;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 120px 20px 80px;
+    opacity: 0; transition: opacity 1s ease;
+    perspective: 1000px; 
+  }
+  #main-content.show { opacity: 1; }
+
+  .layout-wrapper {
+    display: flex; align-items: center; gap: 24px;
+    margin-bottom: 80px;
+    transition: transform 0.1s ease-out;
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* --- KHUNG PROFILE --- */
+  .profile-card {
+    width: 100%;
+    max-width: 900px; 
+    background: var(--card-bg);
+    backdrop-filter: blur(20px);
+    border: 1px solid var(--border);
+    border-radius: 28px;
+    padding: 36px 45px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+  }
+
+  /* Layout Avatar trái - Text phải */
+  .profile-top { 
+    display: flex; 
+    flex-direction: row; 
+    align-items: center; 
+    gap: 32px;
+    text-align: left;
+  }
+  
+  /* === KHỐI AVATAR (Đã xóa viền gradient) === */
+  .avatar-container {
+    position: relative; width: 110px; height: 110px;
+    flex-shrink: 0;
+  }
+  .avatar-img {
+    position: relative; z-index: 1; width: 110px; height: 110px;
+    border-radius: 50%; object-fit: cover; border: 4px solid var(--bg);
+  }
+
+  /* ====== KHUNG DECOR DISCORD ====== */
+  .avatar-decoration {
+    position: absolute;
+    top: -10px; left: -10px;
+    width: 130px; height: 130px;
+    z-index: 2; 
+    pointer-events: none; 
+    display: none; 
+    object-fit: contain;
+  }
+
+  /* ====== CHẤM TRẠNG THÁI ====== */
+  .status-dot {
+    position: absolute; z-index: 3; right: 4px; bottom: 4px;
+    width: 26px; height: 26px; border-radius: 50%;
+    border: 4px solid var(--bg); background: var(--offline);
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.3s;
+  }
+  .status-dot svg {
+    width: 14px; height: 14px; fill: #fff;
+    display: none;
+  }
+
+  /* Cột thông tin bên phải Avatar */
+  .info-right {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .name-row {
+    display: flex; align-items: center; gap: 12px;
+    margin-bottom: 2px;
+  }
+  .display-name { font-size: 1.7rem; font-weight: 800; letter-spacing: -0.5px; }
+  
+  .discord-tag {
+    background: rgba(139, 92, 246, 0.15);
+    border: 1px solid var(--accent);
+    color: #c4b5fd;
+    font-size: 0.75rem; font-weight: 600;
+    padding: 2px 10px; border-radius: 20px;
+    display: flex; align-items: center; gap: 4px;
+  }
+  .username { font-size: 1rem; color: var(--text-muted); margin-bottom: 6px; }
+  .role { font-size: 1.1rem; font-weight: 600; color: #e2e8f0; }
+
+  .divider { height: 1px; background: var(--border); margin: 24px 0 20px 0; }
+
+  /* Discord Activity */
+  .activity-section { display: flex; align-items: center; gap: 16px; }
+  .activity-img {
+    width: 54px; height: 54px; border-radius: 14px;
+    object-fit: cover; background: rgba(255,255,255,0.05);
+  }
+  .activity-info { flex: 1; min-width: 0; }
+  .activity-label { font-size: 11px; text-transform: uppercase; color: var(--text-muted); font-weight: 700; letter-spacing: 0.5px; }
+  .activity-name { font-size: 1.05rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .activity-detail { font-size: 0.85rem; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  /* --- 3 NÚT MẠNG XÃ HỘI BÊN PHẢI --- */
+  .side-socials {
+    display: flex; flex-direction: column; gap: 16px;
+    flex-shrink: 0;
+  }
+  
+  .social-btn {
+    width: 54px; height: 54px; border-radius: 50%;
+    background: var(--card-bg); border: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--text-muted); text-decoration: none; font-size: 22px;
+    backdrop-filter: blur(10px); 
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  }
+  .social-btn:hover {
+    transform: translateY(-12px) scale(1.05); 
+    background: var(--accent); color: #fff;
+    border-color: transparent; box-shadow: 0 15px 25px var(--accent-glow);
+  }
+  .social-btn svg { width: 24px; height: 24px; fill: currentColor; }
+
+  /* =========================================================
+     4. MY SKILL SECTION
+     ========================================================= */
+  .skills-section {
+    width: 100%; max-width: 1000px;
+    text-align: center; margin-bottom: 40px;
+    transition: transform 0.1s ease-out;
+  }
+  
+  .skills-header { margin-bottom: 40px; }
+  .skills-subtitle-top {
+    font-size: 0.8rem; font-weight: 700; color: var(--accent);
+    letter-spacing: 3px; text-transform: uppercase; margin-bottom: 8px;
+    display: flex; align-items: center; justify-content: center; gap: 12px;
+  }
+  .skills-subtitle-top::before, .skills-subtitle-top::after {
+    content: ''; height: 1px; width: 50px; background: var(--accent);
+  }
+
+  .skills-title { font-size: 2.2rem; font-weight: 700; margin-bottom: 8px; }
+  .skills-title span { color: var(--accent); }
+  .skills-desc { font-size: 1rem; color: var(--text-muted); }
+
+  .skills-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 24px;
+  }
+
+  .skill-card {
+    background: linear-gradient(180deg, #111116, #0a0a0f);
+    border: 1px solid var(--border);
+    border-radius: 20px; padding: 32px 24px;
+    display: flex; flex-direction: column; align-items: center;
+    transition: transform 0.4s, border-color 0.3s, box-shadow 0.3s;
+  }
+  .skill-card:hover {
+    transform: translateY(-8px); border-color: rgba(139, 92, 246, 0.4);
+    box-shadow: 0 15px 35px rgba(0,0,0,0.6);
+  }
+
+  .skill-icon-box {
+    width: 60px; height: 60px; border-radius: 16px;
+    background: rgba(255,255,255,0.03);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 28px; margin-bottom: 20px;
+    border: 1px solid rgba(255,255,255,0.05);
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  }
+  .skill-card:hover .skill-icon-box {
+    transform: translateY(-10px) scale(1.1);
+    background: rgba(139, 92, 246, 0.1);
+    border-color: rgba(139, 92, 246, 0.3);
+  }
+  
+  .skill-name { font-size: 1.1rem; font-weight: 600; margin-bottom: 8px; }
+  .skill-text { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 24px; line-height: 1.4; }
+
+  .progress-bar {
+    width: 100%; height: 4px; background: rgba(255,255,255,0.1);
+    border-radius: 2px; margin-top: auto; overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%; border-radius: 2px;
+    background: linear-gradient(90deg, var(--accent), #3b82f6);
+  }
+
+  /* --- FOOTER --- */
+  footer {
+    margin-top: 20px;
+    font-family: 'Fira Code', monospace;
+    font-size: 0.8rem; color: var(--text-muted);
+    opacity: 0.6;
+    letter-spacing: 0.5px;
+  }
+
+  /* =========================================================
+     5. HIỆU ỨNG ICON BAY THEO CHUỘT
+     ========================================================= */
+  .mouse-emoji {
+    position: fixed;
+    pointer-events: none;
+    z-index: 9999999; 
+    font-size: 18px; 
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+    transform: translate(-50%, -50%);
+    will-change: transform, opacity;
+    animation: flyUpAllPage 1s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+  }
+
+  @keyframes flyUpAllPage {
+    0%   { opacity: 0; transform: translate(-50%, -50%) scale(0.4) rotate(0deg); }
+    20%  { opacity: 1; transform: translate(-50%, -80%) scale(1) rotate(10deg); }
+    100% { opacity: 0; transform: translate(-50%, -200%) scale(0.8) rotate(-10deg); }
+  }
+
+  /* =========================================================
+     6. RESPONSIVE (MOBILE)
+     ========================================================= */
+  @media (max-width: 1024px) {
+    .layout-wrapper { flex-direction: column; gap: 20px; margin-bottom: 50px; }
+    .profile-card { padding: 28px 24px; border-radius: 24px; }
+    
+    .profile-top { flex-direction: column; text-align: center; gap: 16px; }
+    .name-row { justify-content: center; }
+    .username, .role { text-align: center; }
+    
+    .side-socials { flex-direction: row; margin-bottom: 10px; }
+    .social-btn:hover { transform: translateY(-8px) scale(1.05); }
+
+    .dynamic-island-wrapper { top: 10px; width: 95%; }
+    .dynamic-island { padding: 6px 16px 6px 6px; min-width: 100%; }
+    .album-art { width: 40px; height: 40px; }
+    
+    .typewriter { font-size: 2.2rem; height: 3rem; }
+    .layout-wrapper, .skills-section { transform: none !important; }
+  }
+</style>
+</head>
+<body>
+
+  <!-- MÀN HÌNH CHỜ -->
+  <div id="loading-screen">
+    <div class="typewriter" id="typewriter"></div>
+    <div class="code-icon">&lt;/&gt;</div>
+    <div class="click-text">[ c l i c k  t o  s t a r t ]</div>
+  </div>
+
+  <!-- DYNAMIC ISLAND -->
+  <div class="dynamic-island-wrapper" id="island-wrapper">
+    <div class="dynamic-island" id="dynamic-island">
+      <img class="album-art" id="album-art" src="https://cdn.discordapp.com/embed/avatars/0.png" alt="Cover" />
+      <div class="island-info">
+        <div class="island-label">NOW PLAYING</div>
+        <div class="island-song" id="island-song">Your Favorite Song</div>
+        <div class="island-artist" id="island-artist">Your Favorite Artist</div>
+      </div>
+      <div class="eq-icon" id="eq-icon">
+        <span></span><span></span><span></span><span></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- GIAO DIỆN CHÍNH -->
+  <div id="main-content">
+    
+    <!-- KHUNG PROFILE & SOCIALS -->
+    <div class="layout-wrapper" id="profile-wrapper">
+      
+      <!-- Khung Profile -->
+      <div class="profile-card">
+        <div class="profile-top">
+          <div class="avatar-container">
+            
+            <!-- Avatar (đã xóa thẻ div avatar-frame) -->
+            <img class="avatar-img" id="avatar" src="https://cdn.discordapp.com/embed/avatars/0.png" alt="Avatar" />
+            
+            <!-- THẺ DECOR DISCORD -->
+            <img class="avatar-decoration" id="avatar-decoration" src="" alt="Decoration" />
+            
+            <!-- Chấm trạng thái -->
+            <div class="status-dot" id="status-dot">
+              <svg id="icon-online" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+              <svg id="icon-idle" viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 9 9c0-.46-.04-.92-.1-1.36a5.389 5.389 0 0 1-4.4 2.26 5.403 5.403 0 0 1-3.14-9.8c-.44-.06-.9-.1-1.36-.1z"/></svg>
+              <svg id="icon-dnd" viewBox="0 0 24 24"><path d="M19 13H5v-2h14v2z"/></svg>
+            </div>
+          </div>
+          
+          <div class="info-right">
+            <div class="name-row">
+              <div class="display-name" id="display-name">mvu</div>
+              <div class="discord-tag">✦ Discord</div>
+            </div>
+            <div class="username" id="username">@.minhhvu</div>
+            <div class="role">Backend Developer</div>
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="activity-section">
+          <img class="activity-img" id="act-img" src="https://cdn.discordapp.com/embed/avatars/0.png" alt="Activity" />
+          <div class="activity-info">
+            <div class="activity-label" id="act-label">Trạng thái</div>
+            <div class="activity-name" id="act-name">idle on discord</div>
+            <div class="activity-detail" id="act-detail">Đang thư giãn...</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3 Nút mạng xã hội -->
+      <div class="side-socials">
+        <a href="https://discord.com/users/702056566051962930" target="_blank" class="social-btn" title="Discord">
+          <svg viewBox="0 0 127.14 96.36"><path d="M107.7,8.07A105.15,105.15,0,0,0,81.47,0a72.06,72.06,0,0,0-3.36,6.83A97.68,97.68,0,0,0,49,6.83,72.37,72.37,0,0,0,45.64,0,105.89,105.89,0,0,0,19.39,8.09C2.79,32.65-1.71,56.6.54,80.21h0A105.73,105.73,0,0,0,32.71,96.36,77.7,77.7,0,0,0,39.6,85.25a68.42,68.42,0,0,1-10.85-5.18c.91-.66,1.8-1.34,2.66-2a75.57,75.57,0,0,0,64.32,0c.87.71,1.76,1.39,2.66,2a68.68,68.68,0,0,1-10.87,5.19,77,77,0,0,0,6.89,11.1A105.25,105.25,0,0,0,126.6,80.22h0C129.24,52.84,122.09,29.11,107.7,8.07ZM42.45,65.69C36.18,65.69,31,60,31,53s5-12.74,11.43-12.74S54,46,53.89,53,48.84,65.69,42.45,65.69Zm42.24,0C78.41,65.69,73.25,60,73.25,53s5-12.74,11.44-12.74S96.23,46,96.12,53,91.08,65.69,84.69,65.69Z"/></svg>
+        </a>
+        <a href="https://facebook.com/@minhhvu0310" target="_blank" class="social-btn" title="Facebook">
+          <svg viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+        </a>
+        <a href="https://instagram.com/_.minvu/" target="_blank" class="social-btn" title="Instagram">
+          <svg viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>
+        </a>
+      </div>
+    </div>
+
+    <!-- MY SKILL SECTION -->
+    <div class="skills-section" id="skills-wrapper">
+      <div class="skills-header">
+        <div class="skills-subtitle-top">WHAT I DO</div>
+        <div class="skills-title">My <span>Skill</span></div>
+        <div class="skills-desc">Web Backend Development</div>
+      </div>
+
+      <div class="skills-grid">
+        <div class="skill-card">
+          <div class="skill-icon-box" style="color: #facc15;">Py</div>
+          <div class="skill-name">Python</div>
+          <div class="skill-text">Backend logic & automation</div>
+          <div class="progress-bar"><div class="progress-fill" style="width: 85%;"></div></div>
+        </div>
+
+        <div class="skill-card">
+          <div class="skill-icon-box" style="color: #4ade80;">JS</div>
+          <div class="skill-name">Node.js</div>
+          <div class="skill-text">Server-side development</div>
+          <div class="progress-bar"><div class="progress-fill" style="width: 75%;"></div></div>
+        </div>
+
+        <div class="skill-card">
+          <div class="skill-icon-box" style="color: #c084fc;">DB</div>
+          <div class="skill-name">Database</div>
+          <div class="skill-text">Data & query fundamentals</div>
+          <div class="progress-bar"><div class="progress-fill" style="width: 80%;"></div></div>
+        </div>
+
+        <div class="skill-card">
+          <div class="skill-icon-box" style="color: #60a5fa;">{ }</div>
+          <div class="skill-name">REST API</div>
+          <div class="skill-text">Endpoints & integration</div>
+          <div class="progress-bar"><div class="progress-fill" style="width: 90%;"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FOOTER -->
+    <footer>© 2026 @.minhhvu - Tạo ra nhằm mục đích cá nhân.</footer>
+
+  </div>
+
+  <!-- NHẠC NỀN -->
+  <audio id="bg-music" loop preload="auto">
+    <source src="music.mp3" type="audio/mpeg" />
+  </audio>
+
+<script>
+/* =========================================================
+   CẤU HÌNH
+   ========================================================= */
+const CONFIG = {
+  DISCORD_ID: '702056566051962930', 
+  BG_IMAGE: 'https://giffiles.alphacoders.com/215/215982.gif', 
+  MUSIC_COVER: 'https://i.ytimg.com/vi/W4UeUJA9wLU/maxresdefault.jpg', 
+  MUSIC_TITLE: 'Wrong Times ( ft. FOWLEX Snowz )',
+  MUSIC_ARTIST: 'Dangrangto'
+};
+
+/* =========================================================
+   1. XỬ LÝ BACKGROUND GIF
+   ========================================================= */
+if (CONFIG.BG_IMAGE && CONFIG.BG_IMAGE.trim() !== '') {
+  document.body.style.backgroundImage = `linear-gradient(rgba(5, 5, 8, 0.6), rgba(5, 5, 8, 0.6)), url('${CONFIG.BG_IMAGE}')`;
+}
+
+/* =========================================================
+   2. TYPEWRITER & MÀN HÌNH CHỜ
+   ========================================================= */
+const textTarget = "@.minhhvu";
+const typewriterEl = document.getElementById('typewriter');
+const loadingScreen = document.getElementById('loading-screen');
+const mainContent = document.getElementById('main-content');
+const bgMusic = document.getElementById('bg-music');
+
+let typeIndex = 0;
+let isDeleting = false;
+
+function typeEffect() {
+  const currentText = textTarget.substring(0, typeIndex);
+  typewriterEl.textContent = currentText;
+
+  if (!isDeleting && typeIndex === textTarget.length) {
+    setTimeout(() => { isDeleting = true; typeEffect(); }, 1500);
+    return;
+  }
+  if (isDeleting && typeIndex === 0) {
+    isDeleting = false;
+    setTimeout(typeEffect, 500);
+    return;
+  }
+  const speed = isDeleting ? 50 : 150;
+  typeIndex += isDeleting ? -1 : 1;
+  setTimeout(typeEffect, speed);
+}
+typeEffect();
+
+// Setup UI nhạc
+document.getElementById('album-art').src = CONFIG.MUSIC_COVER;
+document.getElementById('island-song').textContent = CONFIG.MUSIC_TITLE;
+document.getElementById('island-artist').textContent = CONFIG.MUSIC_ARTIST;
+
+const eqIcon = document.getElementById('eq-icon');
+eqIcon.style.display = 'none'; 
+
+loadingScreen.addEventListener('click', () => {
+  loadingScreen.classList.add('hidden');
+  mainContent.classList.add('show');
+  
+  bgMusic.volume = 0.5;
+  bgMusic.play().then(() => {
+    eqIcon.style.display = 'flex'; 
+  }).catch(e => {
+    document.getElementById('dynamic-island').addEventListener('click', () => {
+      bgMusic.play();
+      eqIcon.style.display = 'flex';
+    });
+  });
+});
+
+/* =========================================================
+   3. HIỆU ỨNG ICON BAY LÊN KHI DI CHUỘT 
+   ========================================================= */
+const emojis = ['🍚', '👕', '🌾', '💰'];
+let lastSpawnTime = 0;
+
+function handleMove(e) {
+  if (!loadingScreen.classList.contains('hidden')) return;
+
+  let x, y;
+  if (e.type === 'touchmove') {
+    if (e.touches.length === 0) return;
+    x = e.touches[0].clientX;
+    y = e.touches[0].clientY;
+  } else {
+    x = e.clientX;
+    y = e.clientY;
+  }
+
+  const now = Date.now();
+  if (now - lastSpawnTime > 25) {
+    lastSpawnTime = now;
+    spawnEmoji(x, y);
+  }
+}
+
+document.addEventListener('mousemove', handleMove);
+document.addEventListener('touchmove', handleMove, { passive: true });
+
+function spawnEmoji(x, y) {
+  const el = document.createElement('div');
+  el.classList.add('mouse-emoji');
+  el.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+  
+  const randomOffsetX = (Math.random() - 0.5) * 30;
+  const randomOffsetY = (Math.random() - 0.5) * 30;
+  
+  el.style.left = (x + randomOffsetX) + 'px';
+  el.style.top = (y + randomOffsetY) + 'px';
+  
+  document.body.appendChild(el);
+  
+  setTimeout(() => {
+    el.remove();
+  }, 1000);
+}
+
+/* =========================================================
+   4. HIỆU ỨNG PARALLAX (BAY THEO CHUỘT)
+   ========================================================= */
+const profileWrapper = document.getElementById('profile-wrapper');
+const skillsWrapper = document.getElementById('skills-wrapper');
+
+if (window.matchMedia("(pointer: fine)").matches) {
+  document.addEventListener('mousemove', (e) => {
+    if (!loadingScreen.classList.contains('hidden')) return;
+
+    const x = (window.innerWidth / 2 - e.clientX) / 60; 
+    const y = (window.innerHeight / 2 - e.clientY) / 60;
+
+    profileWrapper.style.transform = `translate(${x}px, ${y}px)`;
+    skillsWrapper.style.transform = `translate(${x * 1.5}px, ${y * 1.5}px)`;
+  });
+}
+
+/* =========================================================
+   5. LANYARD API (DISCORD STATUS) - NÂNG CẤP TOÀN DIỆN
+   ========================================================= */
+const STATUS_COLORS = { online: '#23a55a', idle: '#f0b232', dnd: '#f23f43', offline: '#80848e' };
+const elAvatar = document.getElementById('avatar');
+const elName = document.getElementById('display-name');
+const elUser = document.getElementById('username');
+const elStatus = document.getElementById('status-dot');
+const elActImg = document.getElementById('act-img');
+const elActLabel = document.getElementById('act-label');
+const elActName = document.getElementById('act-name');
+const elActDetail = document.getElementById('act-detail');
+const elDecoration = document.getElementById('avatar-decoration');
+
+const iconOnline = document.getElementById('icon-online');
+const iconIdle = document.getElementById('icon-idle');
+const iconDnd = document.getElementById('icon-dnd');
+
+function getAvatarURL(user) {
+  if (!user || !user.avatar) return `https://cdn.discordapp.com/embed/avatars/0.png`;
+  const format = user.avatar.startsWith('a_') ? 'gif' : 'png';
+  return `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.${format}?size=128`;
+}
+
+function updateStatusDot(status) {
+  elStatus.style.background = STATUS_COLORS[status] || STATUS_COLORS.offline;
+  iconOnline.style.display = 'none';
+  iconIdle.style.display = 'none';
+  iconDnd.style.display = 'none';
+
+  if (status === 'online') iconOnline.style.display = 'block';
+  else if (status === 'idle') iconIdle.style.display = 'block';
+  else if (status === 'dnd') iconDnd.style.display = 'block';
+}
+
+function updatePresence(data) {
+  if (!data) return;
+  const { discord_user, discord_status, activities, listening_to_spotify, spotify } = data;
+
+  elAvatar.src = getAvatarURL(discord_user);
+  elName.textContent = discord_user.global_name || discord_user.username;
+  elUser.textContent = '@' + discord_user.username;
+  
+  updateStatusDot(discord_status);
+
+  // Cập nhật Decor
+  if (discord_user.avatar_decoration_data && discord_user.avatar_decoration_data.asset) {
+    const decorationUrl = `https://cdn.discordapp.com/avatar-decoration-presets/${discord_user.avatar_decoration_data.asset}.png`;
+    elDecoration.src = decorationUrl;
+    elDecoration.style.display = 'block';
+  } else {
+    elDecoration.style.display = 'none';
+  }
+
+  const activity = (activities || []).find(a => a.type !== 4); 
+
+  if (listening_to_spotify && spotify) {
+    elActImg.src = spotify.album_art_url;
+    elActLabel.textContent = 'Đang nghe Spotify';
+    elActName.textContent = spotify.song;
+    elActDetail.textContent = 'bởi ' + spotify.artist;
+  } 
+  else if (activity) {
+    const labels = { 0: 'Đang chơi', 1: 'Đang stream', 2: 'Đang nghe', 3: 'Đang xem', 5: 'Đang thi đấu' };
+    elActLabel.textContent = labels[activity.type] || 'Trạng thái';
+    elActName.textContent = activity.name || '—';
+    let detail = '';
+    if (activity.details) detail += activity.details;
+    if (activity.state) detail += (detail ? ' • ' : '') + activity.state;
+    elActDetail.textContent = detail || 'Đang hoạt động...';
+    
+    const img = activity.assets?.large_image;
+    if (img) {
+      elActImg.src = img.startsWith('mp:external') ? 'https://media.discordapp.net/' + img.replace('mp:', '') : `https://cdn.discordapp.com/app-assets/${activity.application_id}/${img}.png`;
+    } else { elActImg.src = `https://cdn.discordapp.com/embed/avatars/0.png`; }
+  } 
+  else {
+    elActImg.src = `https://cdn.discordapp.com/embed/avatars/0.png`; 
+    elActLabel.textContent = 'Discord';
+    elActName.textContent = 'idle on discord';
+    elActDetail.textContent = 'Đang thư giãn...';
+  }
+}
+
+// --- CƠ CHẾ 1: GỌI REST API (Dự phòng khi WebSocket lỗi) ---
+async function fetchLanyardRest() {
+  if (CONFIG.DISCORD_ID === 'YOUR_DISCORD_ID') return;
+  try {
+    const res = await fetch(`https://api.lanyard.rest/v1/users/${CONFIG.DISCORD_ID}`);
+    const json = await res.json();
+    if (json.success && json.data) {
+      console.log('✅ REST API Lấy dữ liệu thành công!');
+      updatePresence(json.data);
+    } else {
+      console.warn('⚠️ Lanyard API báo lỗi:', json.error);
+    }
+  } catch (error) {
+    console.error('❌ Lỗi khi gọi REST API (Có thể do CORS hoặc mất mạng):', error);
+  }
+}
+
+// --- CƠ CHẾ 2: KẾT NỐI WEBSOCKET (Real-time) ---
+function connectLanyard() {
+  const ws = new WebSocket('wss://api.lanyard.rest/socket');
+  let heartbeat;
+  
+  ws.onopen = () => {
+    console.log('🟢 WebSocket Đã kết nối thành công tới Lanyard!');
+  };
+  
+  ws.onmessage = (e) => {
+    const msg = JSON.parse(e.data);
+    if (msg.op === 1) {
+      heartbeat = setInterval(() => ws.send(JSON.stringify({ op: 3 })), msg.d.heartbeat_interval);
+      ws.send(JSON.stringify({ op: 2, d: { subscribe_to_id: CONFIG.DISCORD_ID } }));
+    }
+    if (msg.op === 0) {
+      const d = msg.d;
+      if (msg.t === 'INIT_STATE') {
+        console.log('🟢 WebSocket Nhận dữ liệu ban đầu:', d[CONFIG.DISCORD_ID] ? 'Thành công' : 'Thất bại');
+        updatePresence(d[CONFIG.DISCORD_ID]);
+      }
+      else if (msg.t === 'PRESENCE_UPDATE') {
+        updatePresence(d);
+      }
+    }
+  };
+  
+  ws.onclose = () => { 
+    clearInterval(heartbeat); 
+    console.warn('🔴 WebSocket bị ngắt kết nối, thử lại sau 3s...');
+    setTimeout(connectLanyard, 3000); 
+  };
+  
+  ws.onerror = (error) => {
+    console.error('❌ Lỗi WebSocket (Có thể do mạng chặn):', error);
+  };
+}
+
+// Khởi chạy cả 2 cơ chế để đảm bảo 100% có dữ liệu
+if (CONFIG.DISCORD_ID !== 'YOUR_DISCORD_ID') {
+  fetchLanyardRest(); // Gọi ngay lần đầu
+  connectLanyard();   // Lắng nghe real-time
+} else {
+  console.warn("⚠️ Chưa điền DISCORD_ID vào CONFIG!");
+}
+</script>
+</body>
+</html>
