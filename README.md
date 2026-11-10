@@ -1,1 +1,1 @@
-[Go Review](mvu.id.vn)
+[Go Review](https://mvu.id.vn)
